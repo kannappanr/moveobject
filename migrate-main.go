@@ -72,7 +72,7 @@ EXAMPLES:
    $ export MINIO_BUCKET=miniobucket
    $ moveobject migrate --data-dir /tmp/ 
 
-2. Migrate objects in "object_listing.txt" from one MinIO tp another after skipping 100000 entries in this file
+2. Migrate objects in "object_listing.txt" from one MinIO to another after skipping 10000 entries in this file
    $ export MINIO_ENDPOINT=https://minio:9000
    $ export MINIO_ACCESS_KEY=minio
    $ export MINIO_SECRET_KEY=minio123
@@ -115,6 +115,7 @@ const (
 	// EnvMinIOBucket bucket to MinIO to.
 	EnvMinIOBucket = "MINIO_BUCKET"
 )
+
 func checkArgsAndInit(ctx *cli.Context) {
 	debugFlag = ctx.Bool("debug")
 	logFlag = ctx.Bool("log")
@@ -136,7 +137,6 @@ func checkArgsAndInit(ctx *cli.Context) {
 	console.SetColor("Response", color.New(color.FgGreen))
 }
 
-
 func initMinioClients(ctx *cli.Context) error {
 	mURL := os.Getenv(EnvMinIOEndpoint)
 	if mURL == "" {
@@ -157,7 +157,7 @@ func initMinioClients(ctx *cli.Context) error {
 
 	srcAccessKey := os.Getenv(EnvMinIOSourceAccessKey)
 	srcSecretKey := os.Getenv(EnvMinIOSourceSecretKey)
-	srcEndpoint  := os.Getenv(EnvMinIOSourceEndpoint)
+	srcEndpoint := os.Getenv(EnvMinIOSourceEndpoint)
 
 	if srcAccessKey == "" || srcEndpoint == "" || srcSecretKey == "" {
 		console.Fatalln(fmt.Errorf("one or more of Source's AccessKey:%s SecretKey: %s Endpoint:%s ", srcAccessKey, srcSecretKey, srcEndpoint), "are missing in MinIO configuration")
@@ -223,7 +223,7 @@ func initMinioClients(ctx *cli.Context) error {
 			TLSHandshakeTimeout:   10 * time.Second,
 			ExpectContinueTimeout: 10 * time.Second,
 			TLSClientConfig: &tls.Config{
-				RootCAs: mustGetSystemCertPool(),
+				RootCAs:            mustGetSystemCertPool(),
 				MinVersion:         tls.VersionTLS12,
 				NextProtos:         []string{"http/1.1"},
 				InsecureSkipVerify: ctx.GlobalBool("insecure"),
