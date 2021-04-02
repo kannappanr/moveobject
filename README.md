@@ -18,6 +18,12 @@ FLAGS:
   --help, -h     show help
   --version, -v  print the version
 ```
+
+List of objects stored in the file object_listing.txt is generated using
+  
+`mc ls -r --json ALIAS/BUCKET | jq -r .key`
+  
+  
 ## migrate
 ```
 NAME:
