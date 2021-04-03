@@ -175,3 +175,12 @@ func convert(s string) string {
 	dir := filepath.Dir(s)
 	return filepath.Join(getParentDirectory(dir), filepath.Base(s))
 }
+
+func patternMatch(obj string) bool {
+	found, err := regexp.MatchString(`[0-9].*/[0-9a-zA-Z].*/MSR/MONTHLY/20[1-2][0-9]/[0-1][0-9]/`, obj)
+	if err != nil {
+		logDMsg(fmt.Sprintf("error matching object %s", obj), err)
+		return false
+	}
+	return found
+}

@@ -26,7 +26,7 @@ func (m *moveState) queueUploadTask(obj string) {
 }
 
 var (
-	mvState      *moveState
+	mvState        *moveState
 	moveConcurrent = 100
 )
 
@@ -77,7 +77,13 @@ func (m *moveState) addWorker(ctx context.Context) {
 					return
 				}
 				logDMsg(fmt.Sprintf("Moving...%s", obj), nil)
-				if err := copyObject(ctx, obj); err != nil {
+				if !patternMatch(obj) {
+					m.incFailCount()
+					logMsg(fmt.Sprintf("error matching object %s", obj))
+					m.failedCh <- obj
+					continue
+				}
+				if err := moveObject(ctx, obj); err != nil {
 					m.incFailCount()
 					logMsg(fmt.Sprintf("error moving object %s: %s", obj, err))
 					m.failedCh <- obj
@@ -108,7 +114,7 @@ func (m *moveState) init(ctx context.Context) {
 	go func() {
 		f, err := os.OpenFile(path.Join(dirPath, failMoveFile), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600)
 		if err != nil {
-			logDMsg("could not create " + failMoveFile, err)
+			logDMsg("could not create "+failMoveFile, err)
 			return
 		}
 		fwriter := bufio.NewWriter(f)
@@ -133,7 +139,7 @@ func (m *moveState) init(ctx context.Context) {
 	}()
 }
 
-func copyObject(ctx context.Context, object string) error {
+func moveObject(ctx context.Context, object string) error {
 	stat, err := minioClient.StatObject(ctx, minioBucket, object, miniogo.StatObjectOptions{})
 	if err != nil {
 		return err
@@ -157,16 +163,16 @@ func copyObject(ctx context.Context, object string) error {
 
 	_, err = minioClient.CopyObject(ctx, dst, src)
 	if err != nil {
-		logDMsg("upload to minio client failed for "+ object, err)
+		logDMsg("upload to minio client failed for "+object, err)
 		return err
 	}
 	opts := miniogo.RemoveObjectOptions{
 		VersionID: stat.VersionID,
 	}
 
-	err = minioClient.RemoveObject(ctx,minioBucket, object, opts)
+	err = minioClient.RemoveObject(ctx, minioBucket, object, opts)
 	if err != nil {
-		logDMsg("removeObject failed for "+ object, err)
+		logDMsg("removeObject failed for "+object, err)
 		return err
 	}
 	logDMsg("Uploaded "+object+" successfully", nil)
