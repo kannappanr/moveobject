@@ -23,7 +23,7 @@ List of objects stored in the file object_listing.txt is generated using
   
 `mc ls -r --json ALIAS/BUCKET | jq -r .key`
   
-  
+
 ## migrate
 ```
 NAME:
@@ -51,9 +51,10 @@ EXAMPLES:
    $ export MINIO_SOURCE_ACCESS_KEY=minio
    $ export MINIO_SOURCE_SECRET_KEY=minio123
    $ export MINIO_BUCKET=miniobucket
+   $ export MINIO_SOURCE_BUCKET=srcbucket
    $ moveobject migrate --data-dir /tmp/ 
 
-2. Migrate objects in "object_listing.txt" from one MinIO tp another after skipping 100000 entries in this file
+2. Migrate objects in "object_listing.txt" from one MinIO to another after skipping 10000 entries in this file
    $ export MINIO_ENDPOINT=https://minio:9000
    $ export MINIO_ACCESS_KEY=minio
    $ export MINIO_SECRET_KEY=minio123
@@ -61,6 +62,7 @@ EXAMPLES:
    $ export MINIO_SOURCE_ACCESS_KEY=minio
    $ export MINIO_SOURCE_SECRET_KEY=minio123
    $ export MINIO_BUCKET=miniobucket
+   $ export MINIO_SOURCE_BUCKET=srcbucket
    $ moveobject migrate --data-dir /tmp/ --skip 10000
 
 3. Perform a dry run for migrating objects in "object_listing.txt" from one MinIO to another
@@ -71,6 +73,7 @@ EXAMPLES:
    $ export MINIO_SOURCE_ACCESS_KEY=minio
    $ export MINIO_SOURCE_SECRET_KEY=minio123
    $ export MINIO_BUCKET=miniobucket
+   $ export MINIO_SOURCE_BUCKET=srcbucket
    $ moveobject migrate --data-dir /tmp/ --fake --log
 ```
 
@@ -100,7 +103,7 @@ NAME:
   $ export MINIO_BUCKET=miniobucket
   $ moveobject move --data-dir /tmp/
  
- 2. Move objects in "object_listing.txt" in MinIO after skipping 100000 entries in this file
+ 2. Move objects in "object_listing.txt" in MinIO after skipping 10000 entries in this file
   $ export MINIO_ENDPOINT=https://minio:9000
   $ export MINIO_ACCESS_KEY=minio
   $ export MINIO_SECRET_KEY=minio123

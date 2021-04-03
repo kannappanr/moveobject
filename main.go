@@ -26,6 +26,7 @@ import (
 var (
 	dirPath            string
 	minioBucket        string
+	minioSrcBucket     string
 	debugFlag, logFlag bool
 )
 

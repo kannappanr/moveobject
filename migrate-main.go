@@ -70,6 +70,7 @@ EXAMPLES:
    $ export MINIO_SOURCE_ACCESS_KEY=minio
    $ export MINIO_SOURCE_SECRET_KEY=minio123
    $ export MINIO_BUCKET=miniobucket
+   $ export MINIO_SOURCE_BUCKET=srcbucket
    $ moveobject migrate --data-dir /tmp/ 
 
 2. Migrate objects in "object_listing.txt" from one MinIO to another after skipping 10000 entries in this file
@@ -80,6 +81,7 @@ EXAMPLES:
    $ export MINIO_SOURCE_ACCESS_KEY=minio
    $ export MINIO_SOURCE_SECRET_KEY=minio123
    $ export MINIO_BUCKET=miniobucket
+   $ export MINIO_SOURCE_BUCKET=srcbucket
    $ moveobject migrate --data-dir /tmp/ --skip 10000
 
 3. Perform a dry run for migrating objects in "object_listing.txt" from one MinIO to another
@@ -90,6 +92,7 @@ EXAMPLES:
    $ export MINIO_SOURCE_ACCESS_KEY=minio
    $ export MINIO_SOURCE_SECRET_KEY=minio123
    $ export MINIO_BUCKET=miniobucket
+   $ export MINIO_SOURCE_BUCKET=srcbucket
    $ moveobject migrate --data-dir /tmp/ --fake --log
 `,
 }
@@ -114,6 +117,9 @@ const (
 
 	// EnvMinIOBucket bucket to MinIO to.
 	EnvMinIOBucket = "MINIO_BUCKET"
+
+	// EnvMinIOSourceBucket bucket to MinIO to.
+	EnvMinIOSourceBucket = "MINIO_SOURCE_BUCKET"
 )
 
 func checkArgsAndInit(ctx *cli.Context) {
@@ -158,9 +164,10 @@ func initMinioClients(ctx *cli.Context) error {
 	srcAccessKey := os.Getenv(EnvMinIOSourceAccessKey)
 	srcSecretKey := os.Getenv(EnvMinIOSourceSecretKey)
 	srcEndpoint := os.Getenv(EnvMinIOSourceEndpoint)
+	minioSrcBucket = os.Getenv(EnvMinIOSourceBucket)
 
-	if srcAccessKey == "" || srcEndpoint == "" || srcSecretKey == "" {
-		console.Fatalln(fmt.Errorf("one or more of Source's AccessKey:%s SecretKey: %s Endpoint:%s ", srcAccessKey, srcSecretKey, srcEndpoint), "are missing in MinIO configuration")
+	if srcAccessKey == "" || srcEndpoint == "" || srcSecretKey == "" || minioSrcBucket == "" {
+		console.Fatalln(fmt.Errorf("one or more of Source's AccessKey:%s SecretKey: %s Endpoint:%s Bucket:%s ", srcAccessKey, srcSecretKey, srcEndpoint, minioSrcBucket), "are missing in MinIO configuration")
 	}
 
 	src, err := url.Parse(srcEndpoint)

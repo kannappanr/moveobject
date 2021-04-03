@@ -14,8 +14,8 @@ import (
 )
 
 const (
-	objListFile = "object_listing.txt"
-	failMigFile = "migration_fails.txt"
+	objListFile  = "object_listing.txt"
+	failMigFile  = "migration_fails.txt"
 	failMoveFile = "move_fails.txt"
 )
 
@@ -141,7 +141,7 @@ func (m *migrateState) init(ctx context.Context) {
 }
 
 func migrateObject(ctx context.Context, object string) error {
-	r, err := minioSrcClient.GetObject(ctx, minioBucket, object, miniogo.GetObjectOptions{})
+	r, err := minioSrcClient.GetObject(ctx, minioSrcBucket, object, miniogo.GetObjectOptions{})
 	if err != nil {
 		return err
 	}
@@ -159,7 +159,7 @@ func migrateObject(ctx context.Context, object string) error {
 	}
 	_, err = minioClient.PutObject(ctx, minioBucket, convert(object), r, stat.Size, miniogo.PutObjectOptions{})
 	if err != nil {
-		logDMsg("upload to minio client failed for "+ object, err)
+		logDMsg("upload to minio client failed for "+object, err)
 		return err
 	}
 	logDMsg("Uploaded "+object+" successfully", nil)
