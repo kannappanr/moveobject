@@ -52,6 +52,8 @@ var allFlags = []cli.Flag{
 var subcommands = []cli.Command{
 	migrateCmd,
 	moveCmd,
+	copyCmd,
+	delCmd,
 }
 
 func mainAction(ctx *cli.Context) error {

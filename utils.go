@@ -26,7 +26,9 @@ func mustGetSystemCertPool() *x509.CertPool {
 }
 
 const (
-	TLOG   = "LOG"
+	// TLOG Log
+	TLOG = "LOG"
+	// TDEBUG DEBUG
 	TDEBUG = "DEBUG"
 )
 

@@ -13,7 +13,7 @@ import (
 	miniogo "github.com/minio/minio-go/v7"
 )
 
-type moveState struct {
+type copyState struct {
 	objectCh chan string
 	failedCh chan string
 	count    uint64
@@ -21,49 +21,49 @@ type moveState struct {
 	wg       sync.WaitGroup
 }
 
-func (m *moveState) queueUploadTask(obj string) {
+func (m *copyState) queueUploadTask(obj string) {
 	m.objectCh <- obj
 }
 
 var (
-	mvState        *moveState
-	moveConcurrent = 100
+	cpState        *copyState
+	copyConcurrent = 100
 )
 
-func newMoveState(ctx context.Context) *moveState {
-	if runtime.GOMAXPROCS(0) > moveConcurrent {
-		moveConcurrent = runtime.GOMAXPROCS(0)
+func newCopyState(ctx context.Context) *copyState {
+	if runtime.GOMAXPROCS(0) > copyConcurrent {
+		copyConcurrent = runtime.GOMAXPROCS(0)
 	}
-	ms := &moveState{
-		objectCh: make(chan string, moveConcurrent),
-		failedCh: make(chan string, moveConcurrent),
+	cp := &copyState{
+		objectCh: make(chan string, copyConcurrent),
+		failedCh: make(chan string, copyConcurrent),
 	}
 
-	return ms
+	return cp
 }
 
 // Increase count processed
-func (m *moveState) incCount() {
+func (m *copyState) incCount() {
 	atomic.AddUint64(&m.count, 1)
 }
 
 // Get total count processed
-func (m *moveState) getCount() uint64 {
+func (m *copyState) getCount() uint64 {
 	return atomic.LoadUint64(&m.count)
 }
 
 // Increase count failed
-func (m *moveState) incFailCount() {
+func (m *copyState) incFailCount() {
 	atomic.AddUint64(&m.failCnt, 1)
 }
 
 // Get total count failed
-func (m *moveState) getFailCount() uint64 {
+func (m *copyState) getFailCount() uint64 {
 	return atomic.LoadUint64(&m.failCnt)
 }
 
 // addWorker creates a new worker to process tasks
-func (m *moveState) addWorker(ctx context.Context) {
+func (m *copyState) addWorker(ctx context.Context) {
 	m.wg.Add(1)
 	// Add a new worker.
 	go func() {
@@ -83,7 +83,7 @@ func (m *moveState) addWorker(ctx context.Context) {
 					m.failedCh <- obj
 					continue
 				}
-				if err := moveObject(ctx, obj); err != nil {
+				if err := copyObject(ctx, obj); err != nil {
 					m.incFailCount()
 					logMsg(fmt.Sprintf("error moving object %s: %s", obj, err))
 					m.failedCh <- obj
@@ -95,7 +95,7 @@ func (m *moveState) addWorker(ctx context.Context) {
 	}()
 }
 
-func (m *moveState) finish(ctx context.Context) {
+func (m *copyState) finish(ctx context.Context) {
 	close(m.objectCh)
 	m.wg.Wait() // wait on workers to finish
 	close(m.failedCh)
@@ -104,11 +104,11 @@ func (m *moveState) finish(ctx context.Context) {
 		logMsg(fmt.Sprintf("Moved %d objects, %d failures", m.getCount(), m.getFailCount()))
 	}
 }
-func (m *moveState) init(ctx context.Context) {
+func (m *copyState) init(ctx context.Context) {
 	if m == nil {
 		return
 	}
-	for i := 0; i < moveConcurrent; i++ {
+	for i := 0; i < copyConcurrent; i++ {
 		m.addWorker(ctx)
 	}
 	go func() {
@@ -139,14 +139,10 @@ func (m *moveState) init(ctx context.Context) {
 	}()
 }
 
-func moveObject(ctx context.Context, object string) error {
-	stat, err := minioClient.StatObject(ctx, minioBucket, object, miniogo.StatObjectOptions{})
-	if err != nil {
-		return err
-	}
+func copyObject(ctx context.Context, object string) error {
 
 	if dryRun {
-		logMsg(migrateMsg(object, object))
+		logMsg(migrateMsg(object, convert(object)))
 		return nil
 	}
 
@@ -161,18 +157,9 @@ func moveObject(ctx context.Context, object string) error {
 		Object: convert(object),
 	}
 
-	_, err = minioClient.CopyObject(ctx, dst, src)
+	_, err := minioClient.CopyObject(ctx, dst, src)
 	if err != nil {
 		logDMsg("upload to minio client failed for "+object, err)
-		return err
-	}
-	opts := miniogo.RemoveObjectOptions{
-		VersionID: stat.VersionID,
-	}
-
-	err = minioClient.RemoveObject(ctx, minioBucket, object, opts)
-	if err != nil {
-		logDMsg("removeObject failed for "+object, err)
 		return err
 	}
 	logDMsg("Uploaded "+object+" successfully", nil)

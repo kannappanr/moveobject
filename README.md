@@ -117,3 +117,84 @@ NAME:
   $ export MINIO_BUCKET=miniobucket
   $ moveobject move --data-dir /tmp/ --fake --log
 ```
+## copy
+```
+NAME:
+   moveobject copy - copy objects up one level
+ 
+ USAGE:
+   moveobject copy [--skip, --fake]
+ 
+ FLAGS:
+  --insecure, -i          disable TLS certificate verification
+  --log, -l               enable logging
+  --debug                 enable debugging
+  --data-dir value        data directory
+  --skip value, -s value  number of entries to skip from input file (default: 0)
+  --fake                  perform a fake migration
+  --help, -h              show help
+  
+ 
+ EXAMPLES:
+ 1. Move objects in "object_listing.txt" in MinIO.
+  $ export MINIO_ENDPOINT=https://minio:9000
+  $ export MINIO_ACCESS_KEY=minio
+  $ export MINIO_SECRET_KEY=minio123
+  $ export MINIO_BUCKET=miniobucket
+  $ moveobject copy --data-dir /tmp/
+ 
+ 2. Move objects in "object_listing.txt" in MinIO after skipping 100000 entries in this file
+  $ export MINIO_ENDPOINT=https://minio:9000
+  $ export MINIO_ACCESS_KEY=minio
+  $ export MINIO_SECRET_KEY=minio123
+  $ export MINIO_BUCKET=miniobucket
+  $ moveobject copy --data-dir /tmp/ --skip 10000
+ 
+ 3. Perform a dry run for moving objects in "object_listing.txt" in MinIO
+  $ export MINIO_ENDPOINT=https://minio:9000
+  $ export MINIO_ACCESS_KEY=minio
+  $ export MINIO_SECRET_KEY=minio123
+  $ export MINIO_BUCKET=miniobucket
+  $ moveobject copy --data-dir /tmp/ --fake --log
+
+```
+## delete
+```
+NAME:
+   moveobject delete - delete objects specified in the list
+ 
+ USAGE:
+   moveobject delete [--skip, --fake]
+ 
+ FLAGS:
+  --insecure, -i          disable TLS certificate verification
+  --log, -l               enable logging
+  --debug                 enable debugging
+  --data-dir value        data directory
+  --skip value, -s value  number of entries to skip from input file (default: 0)
+  --fake                  perform a fake migration
+  --help, -h              show help
+  
+ 
+ EXAMPLES:
+ 1. Delete objects in "object_listing.txt" in MinIO.
+  $ export MINIO_ENDPOINT=https://minio:9000
+  $ export MINIO_ACCESS_KEY=minio
+  $ export MINIO_SECRET_KEY=minio123
+  $ export MINIO_BUCKET=miniobucket
+  $ moveobject delete --data-dir /tmp/
+ 
+ 2. Delete objects in "object_listing.txt" in MinIO after skipping 100000 entries in this file
+  $ export MINIO_ENDPOINT=https://minio:9000
+  $ export MINIO_ACCESS_KEY=minio
+  $ export MINIO_SECRET_KEY=minio123
+  $ export MINIO_BUCKET=miniobucket
+  $ moveobject delete --data-dir /tmp/ --skip 10000
+ 
+ 3. Perform a dry run for deleting objects in "object_listing.txt" in MinIO
+  $ export MINIO_ENDPOINT=https://minio:9000
+  $ export MINIO_ACCESS_KEY=minio
+  $ export MINIO_SECRET_KEY=minio123
+  $ export MINIO_BUCKET=miniobucket
+  $ moveobject delete --data-dir /tmp/ --fake --log
+```
