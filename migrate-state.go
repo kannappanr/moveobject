@@ -14,21 +14,26 @@ import (
 )
 
 const (
-	objListFile    = "object_listing.txt"
-	failMigFile    = "migration_fails.txt"
-	failMoveFile   = "move_fails.txt"
-	failCopyFile   = "copy_fails.txt"
-	failDeleteFile = "delete_fails.txt"
+	objListFile       = "object_listing.txt"
+	failMigFile       = "migration_fails.txt"
+	failMoveFile      = "move_fails.txt"
+	failCopyFile      = "copy_fails.txt"
+	failDeleteFile    = "delete_fails.txt"
+	successMigFile    = "migration_success.txt"
+	successMoveFile   = "move_success.txt"
+	successCopyFile   = "copy_success.txt"
+	successDeleteFile = "delete_success.txt"
 )
 
 var dryRun bool
 
 type migrateState struct {
-	objectCh chan string
-	failedCh chan string
-	count    uint64
-	failCnt  uint64
-	wg       sync.WaitGroup
+	objectCh  chan string
+	failedCh  chan string
+	successCh chan string
+	count     uint64
+	failCnt   uint64
+	wg        sync.WaitGroup
 }
 
 func (m *migrateState) queueUploadTask(obj string) {
@@ -45,8 +50,9 @@ func newMigrationState(ctx context.Context) *migrateState {
 		migrationConcurrent = runtime.GOMAXPROCS(0)
 	}
 	ms := &migrateState{
-		objectCh: make(chan string, migrationConcurrent),
-		failedCh: make(chan string, migrationConcurrent),
+		objectCh:  make(chan string, migrationConcurrent),
+		failedCh:  make(chan string, migrationConcurrent),
+		successCh: make(chan string, migrationConcurrent),
 	}
 
 	return ms
@@ -93,6 +99,7 @@ func (m *migrateState) addWorker(ctx context.Context) {
 					m.failedCh <- obj
 					continue
 				}
+				m.successCh <- obj
 				m.incCount()
 			}
 		}
@@ -124,6 +131,15 @@ func (m *migrateState) init(ctx context.Context) {
 		defer fwriter.Flush()
 		defer f.Close()
 
+		s, err := os.OpenFile(path.Join(dirPath, successMigFile), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600)
+		if err != nil {
+			logDMsg("could not create "+successMigFile, err)
+			return
+		}
+		swriter := bufio.NewWriter(s)
+		defer swriter.Flush()
+		defer s.Close()
+
 		for {
 			select {
 			case <-ctx.Done():
@@ -136,7 +152,14 @@ func (m *migrateState) init(ctx context.Context) {
 					logMsg(fmt.Sprintf("Error writing to migration_fails.txt for "+obj, err))
 					os.Exit(1)
 				}
-
+			case obj, ok := <-m.successCh:
+				if !ok {
+					return
+				}
+				if _, err := s.WriteString(obj + "\n"); err != nil {
+					logMsg(fmt.Sprintf("Error writing to migration_success.txt for "+obj, err))
+					os.Exit(1)
+				}
 			}
 		}
 	}()

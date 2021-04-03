@@ -14,11 +14,12 @@ import (
 )
 
 type copyState struct {
-	objectCh chan string
-	failedCh chan string
-	count    uint64
-	failCnt  uint64
-	wg       sync.WaitGroup
+	objectCh  chan string
+	failedCh  chan string
+	successCh chan string
+	count     uint64
+	failCnt   uint64
+	wg        sync.WaitGroup
 }
 
 func (m *copyState) queueUploadTask(obj string) {
@@ -35,8 +36,9 @@ func newCopyState(ctx context.Context) *copyState {
 		copyConcurrent = runtime.GOMAXPROCS(0)
 	}
 	cp := &copyState{
-		objectCh: make(chan string, copyConcurrent),
-		failedCh: make(chan string, copyConcurrent),
+		objectCh:  make(chan string, copyConcurrent),
+		failedCh:  make(chan string, copyConcurrent),
+		successCh: make(chan string, copyConcurrent),
 	}
 
 	return cp
@@ -89,6 +91,7 @@ func (m *copyState) addWorker(ctx context.Context) {
 					m.failedCh <- obj
 					continue
 				}
+				m.successCh <- obj
 				m.incCount()
 			}
 		}
@@ -121,6 +124,15 @@ func (m *copyState) init(ctx context.Context) {
 		defer fwriter.Flush()
 		defer f.Close()
 
+		s, err := os.OpenFile(path.Join(dirPath, successCopyFile), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600)
+		if err != nil {
+			logDMsg("could not create "+successCopyFile, err)
+			return
+		}
+		swriter := bufio.NewWriter(s)
+		defer swriter.Flush()
+		defer s.Close()
+
 		for {
 			select {
 			case <-ctx.Done():
@@ -131,6 +143,14 @@ func (m *copyState) init(ctx context.Context) {
 				}
 				if _, err := f.WriteString(obj + "\n"); err != nil {
 					logMsg(fmt.Sprintf("Error writing to move_fails.txt for "+obj, err))
+					os.Exit(1)
+				}
+			case obj, ok := <-m.successCh:
+				if !ok {
+					return
+				}
+				if _, err := s.WriteString(obj + "\n"); err != nil {
+					logMsg(fmt.Sprintf("Error writing to copy_success.txt for "+obj, err))
 					os.Exit(1)
 				}
 
