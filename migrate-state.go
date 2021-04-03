@@ -14,9 +14,11 @@ import (
 )
 
 const (
-	objListFile  = "object_listing.txt"
-	failMigFile  = "migration_fails.txt"
-	failMoveFile = "move_fails.txt"
+	objListFile    = "object_listing.txt"
+	failMigFile    = "migration_fails.txt"
+	failMoveFile   = "move_fails.txt"
+	failCopyFile   = "copy_fails.txt"
+	failDeleteFile = "delete_fails.txt"
 )
 
 var dryRun bool

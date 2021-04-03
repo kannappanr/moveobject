@@ -112,9 +112,9 @@ func (m *copyState) init(ctx context.Context) {
 		m.addWorker(ctx)
 	}
 	go func() {
-		f, err := os.OpenFile(path.Join(dirPath, failMoveFile), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600)
+		f, err := os.OpenFile(path.Join(dirPath, failCopyFile), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600)
 		if err != nil {
-			logDMsg("could not create "+failMoveFile, err)
+			logDMsg("could not create "+failCopyFile, err)
 			return
 		}
 		fwriter := bufio.NewWriter(f)
