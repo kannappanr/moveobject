@@ -9,6 +9,7 @@ import (
 	"runtime"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	miniogo "github.com/minio/minio-go/v7"
 )
@@ -106,9 +107,11 @@ func (m *migrateState) addWorker(ctx context.Context) {
 	}()
 }
 func (m *migrateState) finish(ctx context.Context) {
+	time.Sleep(100 * time.Millisecond)
 	close(m.objectCh)
 	m.wg.Wait() // wait on workers to finish
 	close(m.failedCh)
+	close(m.successCh)
 
 	if !dryRun {
 		logMsg(fmt.Sprintf("Migrated %d objects, %d failures", m.getCount(), m.getFailCount()))
@@ -175,7 +178,7 @@ func migrateObject(ctx context.Context, object string) error {
 	if err != nil {
 		fmt.Println(err)
 		logMsg(migrateMsg(object, convert(object)))
-		return nil
+		return err
 	}
 	defer r.Close()
 	if dryRun {

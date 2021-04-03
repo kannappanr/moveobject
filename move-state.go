@@ -9,6 +9,7 @@ import (
 	"runtime"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	miniogo "github.com/minio/minio-go/v7"
 )
@@ -99,9 +100,11 @@ func (m *moveState) addWorker(ctx context.Context) {
 }
 
 func (m *moveState) finish(ctx context.Context) {
+	time.Sleep(100 * time.Millisecond)
 	close(m.objectCh)
 	m.wg.Wait() // wait on workers to finish
 	close(m.failedCh)
+	close(m.successCh)
 
 	if !dryRun {
 		logMsg(fmt.Sprintf("Moved %d objects, %d failures", m.getCount(), m.getFailCount()))

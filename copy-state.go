@@ -9,6 +9,7 @@ import (
 	"runtime"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	miniogo "github.com/minio/minio-go/v7"
 )
@@ -91,6 +92,7 @@ func (m *copyState) addWorker(ctx context.Context) {
 					m.failedCh <- obj
 					continue
 				}
+				logMsg(fmt.Sprintf("Successully copied %s", obj))
 				m.successCh <- obj
 				m.incCount()
 			}
@@ -99,9 +101,11 @@ func (m *copyState) addWorker(ctx context.Context) {
 }
 
 func (m *copyState) finish(ctx context.Context) {
+	time.Sleep(100 * time.Millisecond)
 	close(m.objectCh)
 	m.wg.Wait() // wait on workers to finish
 	close(m.failedCh)
+	close(m.successCh)
 
 	if !dryRun {
 		logMsg(fmt.Sprintf("Moved %d objects, %d failures", m.getCount(), m.getFailCount()))
@@ -149,6 +153,7 @@ func (m *copyState) init(ctx context.Context) {
 				if !ok {
 					return
 				}
+				logMsg(fmt.Sprintf("Writing %s", obj))
 				if _, err := s.WriteString(obj + "\n"); err != nil {
 					logMsg(fmt.Sprintf("Error writing to copy_success.txt for "+obj, err))
 					os.Exit(1)
