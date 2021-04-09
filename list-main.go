@@ -44,7 +44,7 @@ var listCmd = cli.Command{
 	{{end}}
  
  EXAMPLES:
- 1. Move objects in "object_listing.txt" in MinIO.
+ 1. save list of object versions in "version_listing.txt" in MinIO.
 	$ export MINIO_ENDPOINT=https://minio:9000
 	$ export MINIO_ACCESS_KEY=minio
 	$ export MINIO_SECRET_KEY=minio123
@@ -82,7 +82,7 @@ func listAction(cliCtx *cli.Context) error {
 			fmt.Println(object.Err)
 			return object.Err
 		}
-		if !object.IsDeleteMarker && object.IsLatest {
+		if !object.IsDeleteMarker && object.IsLatest && patternMatch(object.Key) {
 			if _, err := s.WriteString(object.VersionID + "," + object.Key + "\n"); err != nil {
 				logMsg(fmt.Sprintf("Error writing to version_listing.txt for "+object.Key, err))
 				os.Exit(1)

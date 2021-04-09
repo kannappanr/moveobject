@@ -161,6 +161,9 @@ func QueryEncode(v url.Values) string {
 }
 
 func substr(s string, pos, length int) string {
+	if length == -1 {
+		return s
+	}
 	runes := []rune(s)
 	l := pos + length
 	if l > len(runes) {
