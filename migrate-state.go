@@ -3,10 +3,13 @@ package main
 import (
 	"bufio"
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path"
 	"runtime"
+	"strconv"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -186,7 +189,31 @@ func migrateObject(ctx context.Context, object string) error {
 		logMsg(migrateMsg(object, convert(object)))
 		return nil
 	}
-	_, err = minioClient.PutObject(ctx, minioBucket, convert(object), r, stat.Size, miniogo.PutObjectOptions{})
+	result := strings.SplitN(object, "/", 2)
+	if len(result) != 2 {
+		fmt.Println("Unable to get prefix for object: ", object)
+		return errors.New("Unable to get prefix for object: " + object)
+	}
+	prefix, err := strconv.Atoi(result[0])
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+
+	var bucket string
+	if prefix > -1 && prefix < 250 {
+		bucket = minioDstBucket1
+	} else if prefix > 249 && prefix < 500 {
+		bucket = minioDstBucket2
+	} else if prefix > 499 && prefix < 750 {
+		bucket = minioDstBucket3
+	} else if prefix > 749 && prefix < 1000 {
+		bucket = minioDstBucket4
+	} else {
+		fmt.Println("unknown prefix for object: ", object)
+		return errors.New("Unknown prefix for object: " + object)
+	}
+	_, err = minioClient.PutObject(ctx, bucket, convert(object), r, stat.Size, miniogo.PutObjectOptions{})
 	if err != nil {
 		logDMsg("upload to minio client failed for "+object, err)
 		return err

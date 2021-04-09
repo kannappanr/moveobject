@@ -69,7 +69,10 @@ EXAMPLES:
    $ export MINIO_SOURCE_ENDPOINT=https://minio-src:9000
    $ export MINIO_SOURCE_ACCESS_KEY=minio
    $ export MINIO_SOURCE_SECRET_KEY=minio123
-   $ export MINIO_BUCKET=miniobucket
+   $ export MINIO_DEST_BUCKET_1=dstbucket1
+   $ export MINIO_DEST_BUCKET_2=dstbucket2
+   $ export MINIO_DEST_BUCKET_3=dstbucket3
+   $ export MINIO_DEST_BUCKET_4=dstbucket4
    $ export MINIO_SOURCE_BUCKET=srcbucket
    $ moveobject migrate --data-dir /tmp/ 
 
@@ -80,7 +83,10 @@ EXAMPLES:
    $ export MINIO_SOURCE_ENDPOINT=https://minio-src:9000
    $ export MINIO_SOURCE_ACCESS_KEY=minio
    $ export MINIO_SOURCE_SECRET_KEY=minio123
-   $ export MINIO_BUCKET=miniobucket
+   $ export MINIO_DEST_BUCKET_1=dstbucket1
+   $ export MINIO_DEST_BUCKET_2=dstbucket2
+   $ export MINIO_DEST_BUCKET_3=dstbucket3
+   $ export MINIO_DEST_BUCKET_4=dstbucket4
    $ export MINIO_SOURCE_BUCKET=srcbucket
    $ moveobject migrate --data-dir /tmp/ --skip 10000
 
@@ -91,7 +97,10 @@ EXAMPLES:
    $ export MINIO_SOURCE_ENDPOINT=https://minio-src:9000
    $ export MINIO_SOURCE_ACCESS_KEY=minio
    $ export MINIO_SOURCE_SECRET_KEY=minio123
-   $ export MINIO_BUCKET=miniobucket
+   $ export MINIO_DEST_BUCKET_1=dstbucket1
+   $ export MINIO_DEST_BUCKET_2=dstbucket2
+   $ export MINIO_DEST_BUCKET_3=dstbucket3
+   $ export MINIO_DEST_BUCKET_4=dstbucket4
    $ export MINIO_SOURCE_BUCKET=srcbucket
    $ moveobject migrate --data-dir /tmp/ --fake --log
 `,
@@ -115,11 +124,23 @@ const (
 	// EnvMinIOSourceSecretKey MinIO secret key
 	EnvMinIOSourceSecretKey = "MINIO_SOURCE_SECRET_KEY"
 
-	// EnvMinIOBucket bucket to MinIO to.
+	// EnvMinIOBucket bucket on MinIO.
 	EnvMinIOBucket = "MINIO_BUCKET"
 
-	// EnvMinIOSourceBucket bucket to MinIO to.
+	// EnvMinIOSourceBucket bucket on source MinIO.
 	EnvMinIOSourceBucket = "MINIO_SOURCE_BUCKET"
+
+	// EnvMinIODestBucket1 bucket on dest MinIO.
+	EnvMinIODestBucket1 = "MINIO_DEST_BUCKET_1"
+
+	// EnvMinIODestBucket2 bucket on dest MinIO.
+	EnvMinIODestBucket2 = "MINIO_DEST_BUCKET_2"
+
+	// EnvMinIODestBucket3 bucket on dest MinIO.
+	EnvMinIODestBucket3 = "MINIO_DEST_BUCKET_3"
+
+	// EnvMinIODestBucket4 bucket on dest MinIO.
+	EnvMinIODestBucket4 = "MINIO_DEST_BUCKET_4"
 )
 
 func checkArgsAndInit(ctx *cli.Context) {
@@ -155,10 +176,13 @@ func initMinioClients(ctx *cli.Context) error {
 
 	accessKey := os.Getenv(EnvMinIOAccessKey)
 	secretKey := os.Getenv(EnvMinIOSecretKey)
-	minioBucket = os.Getenv(EnvMinIOBucket)
+	minioDstBucket1 = os.Getenv(EnvMinIODestBucket1)
+	minioDstBucket2 = os.Getenv(EnvMinIODestBucket2)
+	minioDstBucket3 = os.Getenv(EnvMinIODestBucket3)
+	minioDstBucket4 = os.Getenv(EnvMinIODestBucket4)
 
-	if accessKey == "" || secretKey == "" || minioBucket == "" {
-		console.Fatalln(fmt.Errorf("one or more of AccessKey:%s SecretKey: %s Bucket:%s ", accessKey, secretKey, minioBucket), "are missing in MinIO configuration")
+	if accessKey == "" || secretKey == "" || minioDstBucket1 == "" || minioDstBucket2 == "" || minioDstBucket3 == "" || minioDstBucket4 == "" {
+		console.Fatalln(fmt.Errorf("one or more of AccessKey:%s SecretKey: %s DestBucket1:%s DestBucket2:%s DestBucket3:%s DestBucket4:%s ", accessKey, secretKey, minioDstBucket1, minioDstBucket2, minioDstBucket3, minioDstBucket4), "are missing in MinIO configuration")
 	}
 
 	srcAccessKey := os.Getenv(EnvMinIOSourceAccessKey)

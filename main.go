@@ -27,6 +27,10 @@ var (
 	dirPath            string
 	minioBucket        string
 	minioSrcBucket     string
+	minioDstBucket1    string
+	minioDstBucket2    string
+	minioDstBucket3    string
+	minioDstBucket4    string
 	debugFlag, logFlag bool
 )
 
