@@ -173,6 +173,9 @@ func (m *migrateState) init(ctx context.Context) {
 }
 
 func migrateObject(ctx context.Context, object string) error {
+	if !patternMatch(object) {
+		return errors.New("Object doesn't match the expected pattern " + object)
+	}
 	r, err := minioSrcClient.GetObject(ctx, minioSrcBucket, object, miniogo.GetObjectOptions{})
 	if err != nil {
 		return err
@@ -211,7 +214,7 @@ func migrateObject(ctx context.Context, object string) error {
 		bucket = minioDstBucket4
 	} else {
 		fmt.Println("unknown prefix for object: ", object)
-		return errors.New("Unknown prefix for object: " + object)
+		return errors.New("Unable to get prefix for object: " + object)
 	}
 	_, err = minioClient.PutObject(ctx, bucket, convert(object), r, stat.Size, miniogo.PutObjectOptions{})
 	if err != nil {
