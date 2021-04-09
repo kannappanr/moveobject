@@ -99,7 +99,7 @@ func deleteAction(cliCtx *cli.Context) error {
 		return err
 	}
 	delState.finish(ctx)
-	logMsg("successfully completed migration.")
+	logMsg("successfully completed deletion.")
 
 	return nil
 }

@@ -50,6 +50,7 @@ var allFlags = []cli.Flag{
 }
 
 var subcommands = []cli.Command{
+	listCmd,
 	migrateCmd,
 	moveCmd,
 	copyCmd,

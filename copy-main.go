@@ -99,7 +99,7 @@ func copyAction(cliCtx *cli.Context) error {
 		return err
 	}
 	cpState.finish(ctx)
-	logMsg("successfully completed migration.")
+	logMsg("successfully completed copy.")
 
 	return nil
 }

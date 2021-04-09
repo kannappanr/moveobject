@@ -7,6 +7,7 @@ import (
 	"os"
 	"path"
 	"runtime"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -75,10 +76,13 @@ func (m *moveState) addWorker(ctx context.Context) {
 			select {
 			case <-ctx.Done():
 				return
-			case obj, ok := <-m.objectCh:
+			case object, ok := <-m.objectCh:
 				if !ok {
 					return
 				}
+				result := strings.SplitN(object, ",", 2)
+				obj := result[1]
+				versionID := result[0]
 				logDMsg(fmt.Sprintf("Moving...%s", obj), nil)
 				if !patternMatch(obj) {
 					m.incFailCount()
@@ -86,7 +90,7 @@ func (m *moveState) addWorker(ctx context.Context) {
 					m.failedCh <- obj
 					continue
 				}
-				if err := moveObject(ctx, obj); err != nil {
+				if err := moveObject(ctx, obj, versionID); err != nil {
 					m.incFailCount()
 					logMsg(fmt.Sprintf("error moving object %s: %s", obj, err))
 					m.failedCh <- obj
@@ -161,20 +165,16 @@ func (m *moveState) init(ctx context.Context) {
 	}()
 }
 
-func moveObject(ctx context.Context, object string) error {
-	stat, err := minioClient.StatObject(ctx, minioBucket, object, miniogo.StatObjectOptions{})
-	if err != nil {
-		return err
-	}
-
+func moveObject(ctx context.Context, object, versionID string) error {
 	if dryRun {
 		logMsg(migrateMsg(object, object))
 		return nil
 	}
 
 	src := miniogo.CopySrcOptions{
-		Bucket: minioBucket,
-		Object: object,
+		Bucket:    minioBucket,
+		Object:    object,
+		VersionID: versionID,
 	}
 
 	// Destination object
@@ -183,13 +183,13 @@ func moveObject(ctx context.Context, object string) error {
 		Object: convert(object),
 	}
 
-	_, err = minioClient.CopyObject(ctx, dst, src)
+	_, err := minioClient.CopyObject(ctx, dst, src)
 	if err != nil {
 		logDMsg("upload to minio client failed for "+object, err)
 		return err
 	}
 	opts := miniogo.RemoveObjectOptions{
-		VersionID: stat.VersionID,
+		VersionID: versionID,
 	}
 
 	err = minioClient.RemoveObject(ctx, minioBucket, object, opts)

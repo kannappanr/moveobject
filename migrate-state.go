@@ -15,6 +15,7 @@ import (
 )
 
 const (
+	versionListFile   = "version_listing.txt"
 	objListFile       = "object_listing.txt"
 	failMigFile       = "migration_fails.txt"
 	failMoveFile      = "move_fails.txt"
