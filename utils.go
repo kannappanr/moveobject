@@ -178,10 +178,12 @@ func convert(s string) string {
 	return filepath.Join(getParentDirectory(dir), filepath.Base(s))
 }
 
+var matchFile = regexp.MustCompile(`[0-9].*/[0-9a-zA-Z].*/.*/.*/20[0-9][0-9]/[0-1][0-9]/`)
+
 func patternMatch(obj string) bool {
-	found, err := regexp.MatchString(`[0-9].*/[0-9a-zA-Z].*/[0-9a-zA-Z].*/[0-9a-zA-Z].*/20[1-2][0-9]/[0-1][0-9]/`, obj)
-	if err != nil {
-		logDMsg(fmt.Sprintf("error matching object %s", obj), err)
+	found := matchFile.MatchString(obj)
+	if !found {
+		logDMsg(fmt.Sprintf("error matching object %s", obj), nil)
 		return false
 	}
 	return found
