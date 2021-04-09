@@ -129,7 +129,7 @@ func (m *migrateState) init(ctx context.Context) {
 		m.addWorker(ctx)
 	}
 	go func() {
-		f, err := os.OpenFile(path.Join(dirPath, failMigFile), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600)
+		f, err := os.OpenFile(path.Join(dirPath, failMigFile+time.Now().Format(".01-02-2006-15-04-05")), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600)
 		if err != nil {
 			logDMsg("could not create + failMigFile", err)
 			return
@@ -138,7 +138,7 @@ func (m *migrateState) init(ctx context.Context) {
 		defer fwriter.Flush()
 		defer f.Close()
 
-		s, err := os.OpenFile(path.Join(dirPath, successMigFile), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600)
+		s, err := os.OpenFile(path.Join(dirPath, successMigFile+time.Now().Format(".01-02-2006-15-04-05")), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600)
 		if err != nil {
 			logDMsg("could not create "+successMigFile, err)
 			return

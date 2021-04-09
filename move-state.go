@@ -122,7 +122,7 @@ func (m *moveState) init(ctx context.Context) {
 		m.addWorker(ctx)
 	}
 	go func() {
-		f, err := os.OpenFile(path.Join(dirPath, failMoveFile), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600)
+		f, err := os.OpenFile(path.Join(dirPath, failMoveFile+time.Now().Format(".01-02-2006-15-04-05")), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600)
 		if err != nil {
 			logDMsg("could not create "+failMoveFile, err)
 			return
@@ -131,7 +131,7 @@ func (m *moveState) init(ctx context.Context) {
 		defer fwriter.Flush()
 		defer f.Close()
 
-		s, err := os.OpenFile(path.Join(dirPath, successMoveFile), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600)
+		s, err := os.OpenFile(path.Join(dirPath, successMoveFile+time.Now().Format(".01-02-2006-15-04-05")), os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600)
 		if err != nil {
 			logDMsg("could not create "+successMoveFile, err)
 			return
