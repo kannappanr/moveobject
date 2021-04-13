@@ -17,7 +17,6 @@
 package main
 
 import (
-	"bufio"
 	"context"
 	"crypto/tls"
 	"fmt"
@@ -25,7 +24,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"path"
+	"strconv"
 	"time"
 
 	"github.com/minio/cli"
@@ -34,11 +33,28 @@ import (
 	"github.com/minio/minio/pkg/console"
 )
 
+var moveFlags = []cli.Flag{
+	cli.IntFlag{
+		Name:  "start",
+		Usage: "start of numbered prefix",
+		Value: 0,
+	},
+	cli.IntFlag{
+		Name:  "end",
+		Usage: "end of numbered prefix",
+		Value: 999,
+	},
+	cli.BoolFlag{
+		Name:  "fake",
+		Usage: "perform a fake migration",
+	},
+}
+
 var moveCmd = cli.Command{
 	Name:   "move",
 	Usage:  "move objects up one level",
 	Action: moveAction,
-	Flags:  append(allFlags, migrateFlags...),
+	Flags:  append(allFlags, moveFlags...),
 	CustomHelpTemplate: `NAME:
 	 {{.HelpName}} - {{.Usage}}
  
@@ -50,26 +66,19 @@ var moveCmd = cli.Command{
 	{{end}}
  
  EXAMPLES:
- 1. Move objects in "object_listing.txt" in MinIO.
+ 1. Move objects in MinIO with starting prefix of 0 to ending prefix of 99.
 	$ export MINIO_ENDPOINT=https://minio:9000
 	$ export MINIO_ACCESS_KEY=minio
 	$ export MINIO_SECRET_KEY=minio123
 	$ export MINIO_BUCKET=miniobucket
-	$ moveobject move --data-dir /tmp/
- 
- 2. Move objects in "object_listing.txt" in MinIO after skipping 100000 entries in this file
+	$ moveobject move --data-dir /tmp/ --start 0 --end 99
+  
+ 2. Perform a dry run for moving objects with starting prefix of 40 to ending prefix of 99.
 	$ export MINIO_ENDPOINT=https://minio:9000
 	$ export MINIO_ACCESS_KEY=minio
 	$ export MINIO_SECRET_KEY=minio123
 	$ export MINIO_BUCKET=miniobucket
-	$ moveobject move --data-dir /tmp/ --skip 10000
- 
- 3. Perform a dry run for moving objects in "object_listing.txt" in MinIO
-	$ export MINIO_ENDPOINT=https://minio:9000
-	$ export MINIO_ACCESS_KEY=minio
-	$ export MINIO_SECRET_KEY=minio123
-	$ export MINIO_BUCKET=miniobucket
-	$ moveobject move --data-dir /tmp/ --fake --log
+	$ moveobject move --data-dir /tmp/ --fake --log --start 40 --end 99
  `,
 }
 
@@ -146,26 +155,27 @@ func moveAction(cliCtx *cli.Context) error {
 	}
 	mvState = newMoveState(ctx)
 	mvState.init(ctx)
-	skip := cliCtx.Int("skip")
+	startPrefix := cliCtx.Int("start")
+	endPrefix := cliCtx.Int("end")
 	dryRun = cliCtx.Bool("fake")
-	file, err := os.Open(path.Join(dirPath, versionListFile))
-	if err != nil {
-		logDMsg(fmt.Sprintf("could not open file :%s ", versionListFile), err)
-		return err
-	}
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		o := scanner.Text()
-		if skip > 0 {
-			skip--
-			continue
+	for i := startPrefix; i <= endPrefix; i++ {
+		prefix := strconv.Itoa(i) + "/"
+		logMsg("Starting prefix " + prefix)
+		opts := miniogo.ListObjectsOptions{
+			WithVersions: true,
+			Recursive:    true,
+			Prefix:       prefix,
 		}
-		mvState.queueUploadTask(o)
-		logDMsg(fmt.Sprintf("adding %s to move queue", o), nil)
-	}
-	if err := scanner.Err(); err != nil {
-		logDMsg(fmt.Sprintf("error processing file :%s ", versionListFile), err)
-		return err
+		for object := range minioClient.ListObjects(context.Background(), minioBucket, opts) {
+			if object.Err != nil {
+				fmt.Println(object.Err)
+				return object.Err
+			}
+			if !object.IsDeleteMarker && object.IsLatest && patternMatch(object.Key) {
+				mvState.queueUploadTask(object.VersionID + "," + object.Key)
+				logDMsg(fmt.Sprintf("adding %s to move queue", object.Key+" : "+object.VersionID), nil)
+			}
+		}
 	}
 	mvState.finish(ctx)
 	logMsg("successfully completed move.")
